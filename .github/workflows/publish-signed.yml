@@ -1,9 +1,9 @@
 name: Publish signed release
-# Publishes an APK signed outside GitHub (see release.yml). Runs when signed.apk lands on
-# release-staging/<tag>, checks the pinned certificate, creates the Release, removes the branch.
+# Publishes an APK signed outside GitHub (see release.yml): runs when release/signed.apk is pushed,
+# checks the pinned certificate and version, then creates the tag + Release on the built commit.
 on:
   push:
-    branches: [ "release-staging/**" ]
+    paths: [ "release/signed.apk" ]
 
 permissions:
   contents: write
@@ -14,23 +14,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
-        with: { ref: "${{ github.ref_name }}", path: staging }
-      - name: Anything to publish?
-        run: |
-          if [ ! -f staging/signed.apk ]; then echo "SKIP=1" >> "$GITHUB_ENV"; fi
-          echo "TAG=$(cat staging/TAG)" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v5
-        if: env.SKIP != '1'
-        with: { ref: "${{ env.TAG }}", path: repo }
       - name: Verify and publish
-        if: env.SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
-        working-directory: repo
         run: |
+          TAG="$(tr -d '[:space:]' < release/TAG)"; COMMIT="$(tr -d '[:space:]' < release/COMMIT)"
           apk="sarejam-${TAG#v}.apk"
-          cp ../staging/signed.apk "$apk"
+          cp release/signed.apk "$apk"
           aapt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/aapt2"
           "$aapt" dump badging "$apk" | grep -q "versionName='${TAG#v}'" || { echo "::error::version does not match $TAG"; exit 1; }
-          .github/scripts/publish.sh "$TAG" "$apk"
-          git push -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" --delete "${GITHUB_REF_NAME}"
+          git fetch -q origin "$COMMIT" && git show -s --format=%H "$COMMIT"
+          git show "$COMMIT:.github/scripts/publish.sh" > /tmp/publish.sh && git show "$COMMIT:docs/signing-cert.sha256" > docs/signing-cert.sha256
+          bash /tmp/publish.sh "$TAG" "$apk" "$COMMIT"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" --delete "release-staging/$TAG" || true

@@ -31,9 +31,12 @@ base64 -w0 sarejam-release.jks > sarejam-release.jks.b64
 
 ## بدون Secrets (روش فعلی)
 
-اگر Secrets گذاشته نشده باشد، tag یک فایل نصبی بدون امضا روی شاخه موقت `release-staging/<tag>` می‌گذارد.
-کسی که کلید را دارد آن را امضا می‌کند (`apksigner sign --ks sarejam-release.jks --out signed.apk unsigned.apk`)،
-`signed.apk` را روی همان شاخه می‌گذارد و `publish-signed.yml` نسخه را منتشر و شاخه را پاک می‌کند.
+1. در GitHub → Actions → Release → Run workflow، نسخه را بنویس (مثلاً `0.1.0`).
+2. فایل بدون امضا روی شاخه موقت `release-staging/v<نسخه>` قرار می‌گیرد (همراه `TAG` و `COMMIT`).
+3. کسی که کلید را دارد امضا می‌کند: `apksigner sign --ks sarejam-release.jks --out signed.apk unsigned.apk`
+   و `release/signed.apk` + `release/TAG` + `release/COMMIT` را در یک کامیت push می‌کند.
+4. `publish-signed.yml` گواهی و نسخه را بررسی، tag و Release را روی همان کامیت ساخته‌شده ایجاد، و شاخه موقت را پاک می‌کند. آن کامیت فایل بعد از انتشار از شاخه برداشته می‌شود.
+
 در هر دو روش، فایل فقط وقتی منتشر می‌شود که گواهی امضایش با اثر انگشت ثابت `docs/signing-cert.sha256` یکی باشد.
 
 ## ساختن نسخه

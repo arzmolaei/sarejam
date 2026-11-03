@@ -1,12 +1,18 @@
 name: Release
 # A tag v* builds the release APK.
 # - With Secrets (docs/RELEASE.md): signed here and published right away.
-# - Without Secrets: the unsigned APK is put on branch release-staging/<tag>; the owner's key
-#   signs it outside GitHub and pushes signed.apk to that branch; publish-signed.yml publishes it.
+# - Without Secrets: the unsigned APK is put on branch release-staging/<tag> (with TAG and COMMIT);
+#   the owner's key signs it outside GitHub; release/signed.apk + release/TAG + release/COMMIT are
+#   pushed in one commit and publish-signed.yml publishes it (that commit is then dropped again).
 # Either way the published APK must carry the certificate pinned in docs/signing-cert.sha256.
 on:
   push:
     tags: [ "v*" ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without v, e.g. 0.1.0"
+        required: true
 
 permissions:
   contents: write
@@ -32,9 +38,12 @@ jobs:
             echo "SAREJAM_UNSIGNED=1" >> "$GITHUB_ENV"
             echo "MODE=offline" >> "$GITHUB_ENV"
           fi
-      - name: Version from tag
+      - name: Version from tag or input
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          name="${GITHUB_REF_NAME#v}"
+          if [ -n "$INPUT_VERSION" ]; then name="$INPUT_VERSION"; else name="${GITHUB_REF_NAME#v}"; fi
+          echo "TAG=v$name" >> "$GITHUB_ENV"
           IFS=. read -r major minor patch <<< "$name"
           echo "SAREJAM_VERSION_NAME=$name" >> "$GITHUB_ENV"
           echo "SAREJAM_VERSION_CODE=$((major * 10000 + minor * 100 + patch))" >> "$GITHUB_ENV"
@@ -51,15 +60,16 @@ jobs:
         if: env.MODE == 'offline'
         run: |
           mkdir staging && cp app/build/outputs/apk/release/app-release-unsigned.apk staging/unsigned.apk
-          echo "$GITHUB_REF_NAME" > staging/TAG
+          echo "$TAG" > staging/TAG
+          echo "$GITHUB_SHA" > staging/COMMIT
           cd staging && git init -q -b staging && git add . \
             && git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "unsigned $GITHUB_REF_NAME" \
-            && git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" "staging:release-staging/$GITHUB_REF_NAME"
-          echo "::notice::Unsigned APK is on branch release-staging/$GITHUB_REF_NAME; waiting for signed.apk"
+            && git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" "staging:release-staging/$TAG"
+          echo "::notice::Unsigned APK is on branch release-staging/$TAG; waiting for release/signed.apk"
       - name: Publish (Secrets)
         if: env.MODE == 'ci'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/release/app-release.apk "sarejam-${SAREJAM_VERSION_NAME}.apk"
-          .github/scripts/publish.sh "$GITHUB_REF_NAME" "sarejam-${SAREJAM_VERSION_NAME}.apk"
+          .github/scripts/publish.sh "$TAG" "sarejam-${SAREJAM_VERSION_NAME}.apk" "$GITHUB_SHA"
