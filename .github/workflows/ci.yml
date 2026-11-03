@@ -65,7 +65,7 @@ jobs:
             adb shell wm size 360x780
             for m in light dark black; do adb shell am force-stop ir.sarejam.app; adb shell am start -W -n ir.sarejam.app/.MainActivity --es theme_mode $m; sleep 4; adb exec-out screencap -p > shots/$m-api${{ matrix.api }}.png; done
             adb shell input keyevent KEYCODE_HOME && sleep 2 && adb shell input swipe 180 700 180 150 300 && sleep 3 && adb exec-out screencap -p > shots/apps-api${{ matrix.api }}.png
-            adb install -r app/build/outputs/apk/release/app-release.apk && adb shell am start -W -n ir.sarejam.app/.MainActivity && sleep 4 && adb exec-out screencap -p > shots/release-api${{ matrix.api }}.png && adb shell pidof ir.sarejam.app
+            adb uninstall ir.sarejam.app; adb install app/build/outputs/apk/release/app-release.apk && adb shell am start -W -n ir.sarejam.app/.MainActivity && sleep 4 && adb exec-out screencap -p > shots/release-api${{ matrix.api }}.png && adb shell pidof ir.sarejam.app
             for a in com.android.launcher3 com.google.android.apps.nexuslauncher; do adb shell content update --uri content://$a.grid_control/icon_themed --bind boolean_value:b:true 2>/dev/null || true; done
             adb shell input keyevent KEYCODE_HOME && sleep 3 && adb shell input swipe 180 700 180 150 300 && sleep 3 && adb exec-out screencap -p > shots/apps-themed-api${{ matrix.api }}.png
       - name: Publish screenshots to the ci-screenshots branch (for review)
