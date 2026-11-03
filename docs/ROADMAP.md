@@ -14,7 +14,7 @@
 - [x] **0.5 دیتابیس رمزدار** — `core:database` با Room + SQLCipher، کلید در Keystore، جدول‌های Account، Transaction، Category، RawMessage؛ تست Migration آماده.
   تمام شد: تست‌ها سبز؛ فایل دیتابیس بدون کلید باز نمی‌شود.
 - [x] **0.6 قفل اختیاری** — Biometric یا رمز، پیش‌فرض خاموش.
-- [ ] **0.7 خط ساخت** — GitHub Actions: build + test روی هر push؛ APK امضاشده روی هر tag `v*` در Releases.
+- [x] **0.7 خط ساخت** — GitHub Actions: build + test روی هر push؛ APK امضاشده روی هر tag `v*` در Releases.
   تمام شد: tag `v0.1.0` یک APK قابل نصب در Releases می‌سازد. راهنمای ساخت کلید امضا و افزودن Secrets را قدم‌به‌قدم به صاحب پروژه بده؛ کلید هرگز در مخزن نیست.
 
 ## نسخه ۱ — مالی هوشمند (اولین نسخه برای دوستان)
