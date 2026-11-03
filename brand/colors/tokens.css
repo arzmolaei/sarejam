@@ -1,0 +1,11 @@
+:root{
+  --sj-primary:#0B7A6E; --sj-on-primary:#FFFFFF; --sj-accent:#C98A12;
+  --sj-income:#16805B; --sj-expense:#C2413B;
+  --sj-bg:#F6F8F7; --sj-surface:#FFFFFF; --sj-text:#0F2A26; --sj-text-muted:#5B6E6A;
+  --sj-radius:16px; --sj-font:"Vazirmatn",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --sj-primary:#3FC1AE; --sj-on-primary:#00201C; --sj-accent:#F4B740;
+  --sj-income:#5BD19C; --sj-expense:#F2837D;
+  --sj-bg:#0E1513; --sj-surface:#16201D; --sj-text:#E8F1EE; --sj-text-muted:#9FB3AE;
+}}
