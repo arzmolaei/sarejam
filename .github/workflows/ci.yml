@@ -59,7 +59,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            ./gradlew connectedDebugAndroidTest
+            ./gradlew connectedDebugAndroidTest --continue
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             mkdir -p shots
             adb shell wm size 360x780
@@ -72,7 +72,8 @@ jobs:
         if: always() && github.event_name == 'push'
         run: |
           mkdir -p shots && cp -r core/database/schemas shots/ 2>/dev/null || true
-          mkdir -p shots/results && for f in $(find . -path '*/outputs/androidTest-results/connected/*' -name '*.xml' | tr ' ' '?'); do for g in $f; do cp "$g" "shots/results/$(echo "$g" | cut -d/ -f2-3 | tr '/' '-')-$(basename "$g" | tr ' ()' '___')"; done; done || true
+          mkdir -p shots/results && find . -path '*/outputs/androidTest-results/connected/*' -name '*.xml' -print0 | tar --null -cf - -T - | tar -xf - -C shots/results || true
+          grep -rh -A4 '<failure' shots/results | cut -c1-300 | head -60 || true
           cd shots || exit 0
           git init -q -b ci-screenshots && git add . 
           git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "screenshots ${GITHUB_SHA}"
