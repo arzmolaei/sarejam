@@ -7,3 +7,7 @@ android { namespace = "ir.sarejam.core.common" }
 dependencies {
     implementation(project(":core:model"))
 }
+
+dependencies {
+    testImplementation(libs.junit)
+}

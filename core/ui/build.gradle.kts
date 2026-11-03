@@ -6,7 +6,8 @@ plugins {
 android { namespace = "ir.sarejam.core.ui" }
 
 dependencies {
-    implementation(project(":core:common"))
-    implementation(platform(libs.compose.bom))
-    implementation(libs.compose.material3)
+    api(project(":core:common"))
+    api(platform(libs.compose.bom))
+    api(libs.compose.material3)
+    api(libs.compose.ui.tooling.preview)
 }

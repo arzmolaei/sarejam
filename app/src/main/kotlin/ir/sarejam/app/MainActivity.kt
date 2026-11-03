@@ -4,55 +4,35 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import dagger.hilt.android.AndroidEntryPoint
-import ir.sarejam.core.ui.Vazirmatn
+import ir.sarejam.core.ui.Accent
+import ir.sarejam.core.ui.DesignShowcase
+import ir.sarejam.core.ui.SarejamTheme
+import ir.sarejam.core.ui.ThemeMode
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Version 0 has no real screens yet; the design sample is the start screen.
+        val startMode = intent.getStringExtra(EXTRA_MODE)
+            ?.let { name -> ThemeMode.entries.firstOrNull { it.name.equals(name, ignoreCase = true) } }
+            ?: ThemeMode.System
         setContent {
-            // The whole app is right-to-left, whatever the phone language is.
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                MaterialTheme { WelcomeScreen() }
+            var mode by rememberSaveable { mutableStateOf(startMode) }
+            var accent by rememberSaveable { mutableStateOf(Accent.Turquoise) }
+            SarejamTheme(mode = mode, accent = accent) {
+                DesignShowcase(mode, accent, onMode = { mode = it }, onAccent = { accent = it })
             }
         }
     }
-}
 
-@Composable
-private fun WelcomeScreen() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = TextStyle(fontFamily = Vazirmatn, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp),
-            )
-            Text(
-                text = stringResource(R.string.welcome_tagline),
-                style = TextStyle(fontFamily = Vazirmatn, fontWeight = FontWeight.Normal, fontSize = 14.sp),
-            )
-        }
+    companion object {
+        const val EXTRA_MODE = "theme_mode"
     }
 }
