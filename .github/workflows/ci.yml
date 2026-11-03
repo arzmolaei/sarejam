@@ -70,6 +70,7 @@ jobs:
       - name: Publish screenshots to the ci-screenshots branch (for review)
         if: always() && github.event_name == 'push'
         run: |
+          mkdir -p shots && cp -r core/database/schemas shots/ 2>/dev/null || true
           cd shots || exit 0
           git init -q -b ci-screenshots && git add . 
           git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "screenshots ${GITHUB_SHA}"
