@@ -32,6 +32,8 @@ jobs:
   emulator:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -63,9 +65,13 @@ jobs:
             adb shell wm size 360x780
             for m in light dark black; do adb shell am force-stop ir.sarejam.app; adb shell am start -W -n ir.sarejam.app/.MainActivity --es theme_mode $m; sleep 4; adb exec-out screencap -p > shots/$m-api${{ matrix.api }}.png; done
             adb shell input keyevent KEYCODE_HOME && sleep 2 && adb exec-out screencap -p > shots/home-api${{ matrix.api }}.png
-      - name: Screenshots as text (for review without downloads)
-        if: always()
-        run: for f in shots/*.png; do echo "SHOT $f"; echo "B64 $(base64 -w0 "$f")"; done
+      - name: Publish screenshots to the ci-screenshots branch (for review)
+        if: always() && github.event_name == 'push'
+        run: |
+          cd shots || exit 0
+          git init -q -b ci-screenshots && git add . 
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "screenshots ${GITHUB_SHA}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-screenshots
       - uses: actions/upload-artifact@v5
         if: always()
         with:
