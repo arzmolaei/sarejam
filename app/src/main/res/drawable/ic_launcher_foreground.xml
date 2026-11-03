@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- from brand/app-icon/adaptive-foreground.svg: three teeth of «س» = three bars, its bowl = the sum line, the coin = the total -->
+    <group android:pivotX="256" android:pivotY="256" android:scaleX="0.62" android:scaleY="0.62">
+        <group android:translateX="22" android:translateY="4">
+            <path android:fillColor="#FFFFFF" android:pathData="M356,196 A22,22 0 0 1 378,218 V300 A22,22 0 0 1 334,300 V218 A22,22 0 0 1 356,196 Z" />
+            <path android:fillColor="#FFFFFF" android:pathData="M290,160 A22,22 0 0 1 312,182 V300 A22,22 0 0 1 268,300 V182 A22,22 0 0 1 290,160 Z" />
+            <path android:fillColor="#FFFFFF" android:pathData="M224,124 A22,22 0 0 1 246,146 V300 A22,22 0 0 1 202,300 V146 A22,22 0 0 1 224,124 Z" />
+            <path android:strokeColor="#FFFFFF" android:strokeWidth="44" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M356,300 H224 C224,404 82,404 82,300" />
+            <path android:fillColor="#F4B740" android:pathData="M52,212 A30,30 0 1 1 112,212 A30,30 0 1 1 52,212 Z" />
+        </group>
+    </group>
+</vector>

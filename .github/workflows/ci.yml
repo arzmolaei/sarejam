@@ -64,7 +64,9 @@ jobs:
             mkdir -p shots
             adb shell wm size 360x780
             for m in light dark black; do adb shell am force-stop ir.sarejam.app; adb shell am start -W -n ir.sarejam.app/.MainActivity --es theme_mode $m; sleep 4; adb exec-out screencap -p > shots/$m-api${{ matrix.api }}.png; done
-            adb shell input keyevent KEYCODE_HOME && sleep 2 && adb exec-out screencap -p > shots/home-api${{ matrix.api }}.png
+            adb shell input keyevent KEYCODE_HOME && sleep 2 && adb shell input swipe 180 700 180 150 300 && sleep 3 && adb exec-out screencap -p > shots/apps-api${{ matrix.api }}.png
+            for a in com.android.launcher3 com.google.android.apps.nexuslauncher; do adb shell content update --uri content://$a.grid_control/icon_themed --bind boolean_value:b:true 2>/dev/null || true; done
+            adb shell input keyevent KEYCODE_HOME && sleep 3 && adb shell input swipe 180 700 180 150 300 && sleep 3 && adb exec-out screencap -p > shots/apps-themed-api${{ matrix.api }}.png
       - name: Publish screenshots to the ci-screenshots branch (for review)
         if: always() && github.event_name == 'push'
         run: |
