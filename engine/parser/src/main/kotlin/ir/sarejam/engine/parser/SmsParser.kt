@@ -41,7 +41,13 @@ class SmsParser(private val profiles: BankProfiles = BankProfiles) {
             }
         }
 
+        val kindHint = when {
+            FAILED_WORDS.containsMatchIn(text) -> "failed"
+            REFUND_WORDS.containsMatchIn(text) -> "refund"
+            else -> null
+        }
         val direction = amount.sign ?: directionFromWords(text)
+            ?: (if (kindHint == "refund") Direction.CREDIT else null)
             ?: return ParseResult.NeedsReview(profile?.id, "direction not found")
 
         val balance = findBalance(lines)
@@ -69,6 +75,7 @@ class SmsParser(private val profiles: BankProfiles = BankProfiles) {
             epochMillis = Jalali.toEpoch(dateTime),
             description = description,
             categoryHint = categoryHint(description ?: text),
+            kindHint = kindHint,
             confidence = confidence.coerceIn(0.0, 1.0),
             parser = profile?.id ?: "generic",
         )
@@ -80,26 +87,37 @@ class SmsParser(private val profiles: BankProfiles = BankProfiles) {
 
     private fun findAmount(text: String, lines: List<String>): Amount? {
         LABELED_AMOUNT.find(text)?.let { m ->
-            Normalizer.parseAmount(m.groupValues[2])?.let { return Amount(it, sign(m.groupValues[1]), true) }
+            amountOf(m.groupValues[2], text, m.range.last)?.let {
+                return Amount(it, sign(m.groupValues[1]) ?: sign(m.groupValues[3]), true)
+            }
         }
         KEYWORD_AMOUNT.find(text)?.let { m ->
-            Normalizer.parseAmount(m.groupValues[2])?.let {
-                val dir = if (m.groupValues[1] == "واریز") Direction.CREDIT else Direction.DEBIT
+            amountOf(m.groupValues[2], text, m.range.last)?.let {
+                val dir = if (m.groupValues[1] in CREDIT_KEYWORDS) Direction.CREDIT else Direction.DEBIT
                 return Amount(it, sign(m.groupValues[2].take(1)) ?: dir, true)
             }
         }
         for (line in lines) {
+            if (BALANCE_WORD.containsMatchIn(line)) continue
             SIGNED_LINE.matchEntire(line)?.let { m ->
-                Normalizer.parseAmount(m.groupValues[2])?.let { return Amount(it, sign(m.groupValues[1]), false) }
+                val sg = sign(m.groupValues[1]) ?: sign(m.groupValues[3])
+                if (sg != null) amountOf(m.groupValues[2], line, m.groups[2]!!.range.last)?.let { return Amount(it, sg, false) }
             }
         }
         for (line in lines) {
             if (BALANCE_WORD.containsMatchIn(line)) continue
-            RIAL_AMOUNT.find(line)?.let { m ->
-                Normalizer.parseAmount(m.groupValues[1])?.let { return Amount(it, null, false) }
+            CURRENCY_AMOUNT.find(line)?.let { m ->
+                Normalizer.parseAmount(m.groupValues[1])?.let { return Amount(if (m.groupValues[2] == "تومان") it * 10 else it, null, false) }
             }
         }
         return null
+    }
+
+    /** Parses the number and converts تومان → ریال when the word follows the number. */
+    private fun amountOf(raw: String, text: String, endIndex: Int): Long? {
+        val v = Normalizer.parseAmount(raw) ?: return null
+        val after = text.substring((endIndex + 1).coerceAtMost(text.length)).take(8)
+        return if (TOMAN_AFTER.containsMatchIn(after)) v * 10 else v
     }
 
     private fun sign(s: String): Direction? = when (s) {
@@ -122,7 +140,12 @@ class SmsParser(private val profiles: BankProfiles = BankProfiles) {
 
     private fun findBalance(lines: List<String>): Long? {
         for (line in lines) {
-            BALANCE.find(line)?.let { m -> Normalizer.parseAmount(m.groupValues[2])?.let { return if (m.groupValues[2].startsWith("-")) -it else it } }
+            BALANCE.find(line)?.let { m ->
+                Normalizer.parseAmount(m.groupValues[2])?.let {
+                    val v = if (TOMAN_AFTER.containsMatchIn(line.substring(m.range.last + 1))) it * 10 else it
+                    return if (m.groupValues[2].startsWith("-") || m.groupValues[3] == "-") -v else v
+                }
+            }
         }
         return null
     }
@@ -176,18 +199,22 @@ class SmsParser(private val profiles: BankProfiles = BankProfiles) {
         private const val NUM = """[+-]?\d[\d,]*"""
 
         private val PERSONAL_MOBILE = Regex("""(\+?98|0)?9\d{9}""")
-        private val BANK_HINT = Regex("مانده|موجودی|برداشت|واریز|مبلغ|ریال|حساب|کارت")
-        private val MONEY_WORDS = Regex("مبلغ|ریال|برداشت|واریز|مانده|موجودی|انتقال")
+        private val BANK_HINT = Regex("(?i)مانده|موجودی|برداشت|واریز|مبلغ|ریال|تومان|حساب|کارت|بدهکار|بستانکار|balance|withdrawal|deposit")
+        private val MONEY_WORDS = Regex("(?i)مبلغ|ریال|تومان|برداشت|واریز|مانده|موجودی|انتقال|خرید|بدهکار|بستانکار|amount|balance")
         private val OTP = Regex("""(رمز|کد)$ZW(پویا|یک${ZW}بار${ZW}مصرف|تایید|تأیید|اعتبار)?\s*:?\s*\d{4,8}(?!\d|,)""")
         private val LOGIN = Regex("""ورود[\s\u200C]*به|خوش[\s\u200C]*آمدید|ورود[\s\u200C]*موفق""")
-        private val LABELED_AMOUNT = Regex("""مبلغ\s*(?:تراکنش)?\s*:?\s*([+-]?)\s*(\d[\d,]*)""")
-        private val KEYWORD_AMOUNT = Regex("""(برداشت|واریز)\s*:?\s*($NUM)""")
-        private val SIGNED_LINE = Regex("""([+-])\s*(\d[\d,]*)(?:\s*ریال)?""")
-        private val RIAL_AMOUNT = Regex("""(\d{1,3}(?:,\d{3})+)\s*ریال""")
-        private val BALANCE_WORD = Regex("مانده|موجودی")
-        private val BALANCE = Regex("""(مانده|موجودی)\s*(?:حساب)?\s*:?\s*($NUM)""")
-        private val DEBIT_WORDS = Regex("برداشت|خرید|پرید|کسر|پرداخت|انتقال${ZW}از|انتقال${ZW}وجه")
-        private val CREDIT_WORDS = Regex("واریز|نشست|دریافت|افزایش")
+        private val LABELED_AMOUNT = Regex("""(?i)(?:مبلغ|amount|amt)\s*(?:تراکنش)?\s*:?\s*([+-]?)\s*(\d[\d,]*)\s*([+-]?)(?![\d,])""")
+        private val CREDIT_KEYWORDS = setOf("واریز", "بستانکار", "deposit", "Deposit", "DEPOSIT", "credit", "Credit", "CREDIT")
+        private val KEYWORD_AMOUNT = Regex("""(?i)(برداشت|واریز|خرید|کسر|بدهکار|بستانکار|withdrawal|deposit|debit|credit)\s*:?\s*($NUM)""")
+        private val SIGNED_LINE = Regex("""([+-]?)\s*(\d[\d,]*)\s*([+-]?)\s*(?:ریال|تومان|IRR|rial)?""", RegexOption.IGNORE_CASE)
+        private val CURRENCY_AMOUNT = Regex("""(\d{1,3}(?:,\d{3})+|\d{4,})\s*(ریال|تومان)""")
+        private val TOMAN_AFTER = Regex("""^\s*[+-]?\s*تومان""")
+        private val BALANCE_WORD = Regex("(?i)مانده|موجودی|balance|bal\b")
+        private val BALANCE = Regex("""(?i)(مانده|موجودی|balance|bal)\s*(?:حساب)?\s*:?\s*($NUM)\s*([+-]?)""")
+        private val DEBIT_WORDS = Regex("(?i)برداشت|خرید|پرید|کسر|پرداخت|بدهکار|انتقال${ZW}از|انتقال${ZW}وجه|withdrawal|debit|purchase")
+        private val CREDIT_WORDS = Regex("(?i)واریز|نشست|دریافت|افزایش|بستانکار|عودت|deposit|credit")
+        private val FAILED_WORDS = Regex("ناموفق|لغو${ZW}شد|انجام${ZW}نشد|رد${ZW}شد")
+        private val REFUND_WORDS = Regex("عودت|برگشت${ZW}وجه|استرداد|بازگشت${ZW}وجه")
         private val MASKED_CARD = Regex("""\d{4,6}\*+\d{4}""")
         private val ACCOUNT_LINE = Regex("""\d[\d.\-]{7,}\d""")
         private val ACCOUNT_LABELED = Regex("""(حساب|از)\s*:?\s*(\d[\d.\-]{5,}\d)""")

@@ -95,3 +95,65 @@ class SmsParserTest {
         assertIs<ParseResult.NeedsReview>(r)
     }
 }
+
+/**
+ * Layouts for banks we have NO real sample of yet. They are SYNTHETIC, written from formats that are
+ * common across Iranian banks, so the generic rules are proven before a real sample arrives.
+ * When a real sample arrives, add it to Fixtures and keep these.
+ */
+class GenericLayoutsTest {
+    private val parser = SmsParser()
+    private val now = Jalali.toEpoch(JalaliDateTime(1405, 8, 12, 10, 30))
+    private fun t(sender: String, body: String) = parser.parse(sender, body, now)
+
+    private fun check(r: ParseResult, dir: Direction, amount: Long, balance: Long?) {
+        assertIs<ParseResult.Transaction>(r, r.toString())
+        assertEquals(dir, r.direction, r.toString())
+        assertEquals(amount, r.amountRial, r.toString())
+        assertEquals(balance, r.balanceRial, r.toString())
+    }
+
+    @Test fun keywordColonStyle() = check(
+        t("Bank Melli", "بانک ملی ایران\nبرداشت:1,250,000\nحساب:0100000000001\nمانده:8,750,000\n1405/08/12-10:20"),
+        Direction.DEBIT, 1_250_000, 8_750_000)
+
+    @Test fun trailingSignRtlStyle() = check(
+        t("TejaratBank", "بانک تجارت\nحساب 1234-5678\n1,500,000-\nمانده: 3,200,000\n08/12 10:20"),
+        Direction.DEBIT, 1_500_000, 3_200_000)
+
+    @Test fun accountingTermsBedehkarBestankar() {
+        check(t("BankSaderat", "بانک صادرات\nبستانکار: 7,000,000\nمانده: 9,000,000\n1405/08/12 09:00"), Direction.CREDIT, 7_000_000, 9_000_000)
+        check(t("BankSaderat", "بانک صادرات\nبدهکار: 200,000\nمانده: 8,800,000\n1405/08/12 09:10"), Direction.DEBIT, 200_000, 8_800_000)
+    }
+
+    @Test fun cardPurchaseWithArabicLetters() = check(
+        t("BankSepah", "بانك سپه\nخريد كارتي\nمبلغ: 450,000 ريال\nموجودي: 1,050,000 ريال\n1405/08/12 13:45:10"),
+        Direction.DEBIT, 450_000, 1_050_000)
+
+    @Test fun englishLayout() = check(
+        t("PasargadBank", "Bank Pasargad\nWithdrawal: 2,000,000\nBalance: 5,000,000\n1405/08/12 11:00"),
+        Direction.DEBIT, 2_000_000, 5_000_000)
+
+    @Test fun tomanIsConvertedToRial() = check(
+        t("Bank Mellat", "حساب1234567890\nواریز 150,000 تومان\nمانده 2,000,000 تومان\n05/08/12-12:00"),
+        Direction.CREDIT, 1_500_000, 20_000_000)
+
+    @Test fun refundIsCreditWithHint() {
+        val r = t("Bank Shahr", "بانک شهر\nعودت وجه خرید\nمبلغ:300,000ریال\nموجودی:1,300,000 ریال\n1405/08/12 10:00:00")
+        check(r, Direction.CREDIT, 300_000, 1_300_000)
+        assertEquals("refund", (r as ParseResult.Transaction).kindHint)
+    }
+
+    @Test fun failedTransactionIsMarked() {
+        val r = t("Bank Shahr", "بانک شهر\nخرید ناموفق\nمبلغ:300,000ریال\nموجودی:1,300,000 ریال\n1405/08/12 10:00:00")
+        assertEquals("failed", (r as ParseResult.Transaction).kindHint)
+    }
+
+    @Test fun persianDigitsEverywhere() = check(
+        t("Bank Melli", "بانک ملی\nواریز:۲٬۵۰۰٬۰۰۰\nمانده:۱۲٬۵۰۰٬۰۰۰\n۱۴۰۵/۰۸/۱۲ ۰۹:۱۵"),
+        Direction.CREDIT, 2_500_000, 12_500_000)
+
+    @Test fun negativeBalance() = check(
+        t("ResalatBank", "10.99990000.1\n-500,000\n08/12_10:00\nمانده: -200,000"),
+        Direction.DEBIT, 500_000, -200_000)
+}

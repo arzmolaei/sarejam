@@ -32,6 +32,8 @@ sealed interface ParseResult {
         val epochMillis: Long,
         val description: String?,
         val categoryHint: String?,
+        /** "refund" (عودت/برگشت وجه) or "failed" (ناموفق) — the app maps these to Transaction kinds. */
+        val kindHint: String?,
         val confidence: Double,
         val parser: String,
     ) : ParseResult

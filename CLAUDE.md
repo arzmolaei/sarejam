@@ -54,7 +54,7 @@ core/model            مدل‌های مشترک
 core/database         Room + SQLCipher + Migrationها
 core/ui               سیستم طراحی (رنگ، فونت، تم، اجزا)
 core/common           تاریخ شمسی، قالب مبلغ، ابزارها
-engine/parser         ✅ موتور خواندن پیامک (ساخته شده، ۱۵ تست)
+engine/parser         ✅ موتور خواندن پیامک (ساخته شده، ۲۵ تست)
 engine/insight        دسته‌بندی، ربط‌دهنده‌ها، پیش‌بینی
 capture               گیرنده پیامک، شنونده نوتیفیکیشن، کارهای WorkManager
 feature/today|finance|work|life|settings|onboarding
