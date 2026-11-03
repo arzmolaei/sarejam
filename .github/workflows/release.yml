@@ -1,4 +1,9 @@
 name: Release
+# A tag v* builds the release APK.
+# - With Secrets (docs/RELEASE.md): signed here and published right away.
+# - Without Secrets: the unsigned APK is put on branch release-staging/<tag>; the owner's key
+#   signs it outside GitHub and pushes signed.apk to that branch; publish-signed.yml publishes it.
+# Either way the published APK must carry the certificate pinned in docs/signing-cert.sha256.
 on:
   push:
     tags: [ "v*" ]
@@ -15,36 +20,46 @@ jobs:
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: 21 }
       - uses: gradle/actions/setup-gradle@v5
-      - name: Restore signing key from secrets
+      - name: Signing mode
         env:
           KEYSTORE_BASE64: ${{ secrets.SAREJAM_KEYSTORE_BASE64 }}
         run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then echo "::error::Secret SAREJAM_KEYSTORE_BASE64 is missing — see docs/RELEASE.md"; exit 1; fi
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
-          echo "SAREJAM_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "SAREJAM_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "MODE=ci" >> "$GITHUB_ENV"
+          else
+            echo "SAREJAM_UNSIGNED=1" >> "$GITHUB_ENV"
+            echo "MODE=offline" >> "$GITHUB_ENV"
+          fi
       - name: Version from tag
         run: |
           name="${GITHUB_REF_NAME#v}"
           IFS=. read -r major minor patch <<< "$name"
           echo "SAREJAM_VERSION_NAME=$name" >> "$GITHUB_ENV"
           echo "SAREJAM_VERSION_CODE=$((major * 10000 + minor * 100 + patch))" >> "$GITHUB_ENV"
-      - name: Build, test and sign
+      - name: Build and test
         env:
           SAREJAM_KEYSTORE_PASSWORD: ${{ secrets.SAREJAM_KEYSTORE_PASSWORD }}
           SAREJAM_KEY_ALIAS: ${{ secrets.SAREJAM_KEY_ALIAS }}
           SAREJAM_KEY_PASSWORD: ${{ secrets.SAREJAM_KEY_PASSWORD }}
         run: |
-          ./gradlew test :app:assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk "sarejam-${SAREJAM_VERSION_NAME}.apk"
-          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "sarejam-${SAREJAM_VERSION_NAME}.apk" | tee certs.txt
-          if grep -q "CN=Android Debug" certs.txt; then echo "::error::APK is debug-signed"; exit 1; fi
-          sha256sum "sarejam-${SAREJAM_VERSION_NAME}.apk" > "sarejam-${SAREJAM_VERSION_NAME}.apk.sha256"
+          ./gradlew test :app:assembleRelease --no-build-cache
           rm -f "$RUNNER_TEMP/release.jks"
-      - name: Publish GitHub Release
+          ls app/build/outputs/apk/release/
+      - name: Hand the unsigned APK over for signing (no Secrets)
+        if: env.MODE == 'offline'
+        run: |
+          mkdir staging && cp app/build/outputs/apk/release/app-release-unsigned.apk staging/unsigned.apk
+          echo "$GITHUB_REF_NAME" > staging/TAG
+          cd staging && git init -q -b staging && git add . \
+            && git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "unsigned $GITHUB_REF_NAME" \
+            && git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" "staging:release-staging/$GITHUB_REF_NAME"
+          echo "::notice::Unsigned APK is on branch release-staging/$GITHUB_REF_NAME; waiting for signed.apk"
+      - name: Publish (Secrets)
+        if: env.MODE == 'ci'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          notes="docs/releases/${GITHUB_REF_NAME}.md"
-          [ -f "$notes" ] || { echo "نسخه ${SAREJAM_VERSION_NAME}" > /tmp/notes.md; notes=/tmp/notes.md; }
-          gh release create "$GITHUB_REF_NAME" "sarejam-${SAREJAM_VERSION_NAME}.apk" "sarejam-${SAREJAM_VERSION_NAME}.apk.sha256" \
-            --title "سرجمع ${SAREJAM_VERSION_NAME}" --notes-file "$notes"
+          cp app/build/outputs/apk/release/app-release.apk "sarejam-${SAREJAM_VERSION_NAME}.apk"
+          .github/scripts/publish.sh "$GITHUB_REF_NAME" "sarejam-${SAREJAM_VERSION_NAME}.apk"

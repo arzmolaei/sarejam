@@ -1,0 +1,36 @@
+name: Publish signed release
+# Publishes an APK signed outside GitHub (see release.yml). Runs when signed.apk lands on
+# release-staging/<tag>, checks the pinned certificate, creates the Release, removes the branch.
+on:
+  push:
+    branches: [ "release-staging/**" ]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: "${{ github.ref_name }}", path: staging }
+      - name: Anything to publish?
+        run: |
+          if [ ! -f staging/signed.apk ]; then echo "SKIP=1" >> "$GITHUB_ENV"; fi
+          echo "TAG=$(cat staging/TAG)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v5
+        if: env.SKIP != '1'
+        with: { ref: "${{ env.TAG }}", path: repo }
+      - name: Verify and publish
+        if: env.SKIP != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: repo
+        run: |
+          apk="sarejam-${TAG#v}.apk"
+          cp ../staging/signed.apk "$apk"
+          aapt="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/aapt2"
+          "$aapt" dump badging "$apk" | grep -q "versionName='${TAG#v}'" || { echo "::error::version does not match $TAG"; exit 1; }
+          .github/scripts/publish.sh "$TAG" "$apk"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" --delete "${GITHUB_REF_NAME}"

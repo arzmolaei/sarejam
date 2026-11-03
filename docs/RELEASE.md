@@ -29,6 +29,13 @@ base64 -w0 sarejam-release.jks > sarejam-release.jks.b64
 
 محتوای فایل `.b64` را در `SAREJAM_KEYSTORE_BASE64` بگذار.
 
+## بدون Secrets (روش فعلی)
+
+اگر Secrets گذاشته نشده باشد، tag یک فایل نصبی بدون امضا روی شاخه موقت `release-staging/<tag>` می‌گذارد.
+کسی که کلید را دارد آن را امضا می‌کند (`apksigner sign --ks sarejam-release.jks --out signed.apk unsigned.apk`)،
+`signed.apk` را روی همان شاخه می‌گذارد و `publish-signed.yml` نسخه را منتشر و شاخه را پاک می‌کند.
+در هر دو روش، فایل فقط وقتی منتشر می‌شود که گواهی امضایش با اثر انگشت ثابت `docs/signing-cert.sha256` یکی باشد.
+
 ## ساختن نسخه
 
 ```bash

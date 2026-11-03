@@ -35,7 +35,11 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            signingConfig = when {
+                // Unsigned build for signing outside CI (when no Secrets are set).
+                System.getenv("SAREJAM_UNSIGNED") == "1" -> null
+                else -> signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
