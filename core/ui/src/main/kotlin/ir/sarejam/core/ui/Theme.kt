@@ -13,6 +13,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -72,7 +73,13 @@ fun SarejamTheme(
     val surface = when { black -> P.SurfaceBlack; dark -> P.SurfaceDark; else -> P.SurfaceLight }
     val text = if (dark) P.TextDark else P.TextLight
     val muted = if (dark) P.MutedDark else P.MutedLight
+    // Tinted containers (selected chips, tonal buttons) follow the chosen accent, never Material's default purple.
+    val container = lerp(base.primary, bg, if (dark) 0.75f else 0.85f)
     val scheme = base.copy(
+        primaryContainer = container,
+        onPrimaryContainer = text,
+        secondaryContainer = container,
+        onSecondaryContainer = text,
         background = bg,
         onBackground = text,
         surface = bg,
