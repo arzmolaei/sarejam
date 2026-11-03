@@ -5,14 +5,13 @@ name: Release
 #   the owner's key signs it outside GitHub; release/signed.apk + release/TAG + release/COMMIT are
 #   pushed in one commit and publish-signed.yml publishes it (that commit is then dropped again).
 # Either way the published APK must carry the certificate pinned in docs/signing-cert.sha256.
+# Started by a v* tag, or (without push rights for tags) by a commit that adds release/REQUEST
+# containing the version, e.g. 0.1.0. GitHub applies path filters to branch pushes only.
 on:
   push:
+    branches: [ "**" ]
     tags: [ "v*" ]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version without v, e.g. 0.1.0"
-        required: true
+    paths: [ "release/REQUEST" ]
 
 permissions:
   contents: write
@@ -39,10 +38,13 @@ jobs:
             echo "MODE=offline" >> "$GITHUB_ENV"
           fi
       - name: Version from tag or input
-        env:
-          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if [ -n "$INPUT_VERSION" ]; then name="$INPUT_VERSION"; else name="${GITHUB_REF_NAME#v}"; fi
+          if [ -f release/REQUEST ] && [ "$GITHUB_REF_TYPE" = branch ]; then
+            name="$(tr -d '[:space:]' < release/REQUEST)"
+            echo "BUILT_COMMIT=${{ github.event.before }}" >> "$GITHUB_ENV"
+          else
+            name="${GITHUB_REF_NAME#v}"; echo "BUILT_COMMIT=$GITHUB_SHA" >> "$GITHUB_ENV"
+          fi
           echo "TAG=v$name" >> "$GITHUB_ENV"
           IFS=. read -r major minor patch <<< "$name"
           echo "SAREJAM_VERSION_NAME=$name" >> "$GITHUB_ENV"
@@ -61,7 +63,7 @@ jobs:
         run: |
           mkdir staging && cp app/build/outputs/apk/release/app-release-unsigned.apk staging/unsigned.apk
           echo "$TAG" > staging/TAG
-          echo "$GITHUB_SHA" > staging/COMMIT
+          echo "$BUILT_COMMIT" > staging/COMMIT
           cd staging && git init -q -b staging && git add . \
             && git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "unsigned $GITHUB_REF_NAME" \
             && git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" "staging:release-staging/$TAG"
@@ -72,4 +74,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/release/app-release.apk "sarejam-${SAREJAM_VERSION_NAME}.apk"
-          .github/scripts/publish.sh "$TAG" "sarejam-${SAREJAM_VERSION_NAME}.apk" "$GITHUB_SHA"
+          .github/scripts/publish.sh "$TAG" "sarejam-${SAREJAM_VERSION_NAME}.apk" "$BUILT_COMMIT"
