@@ -2,6 +2,7 @@ package ir.sarejam.app
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -26,7 +27,7 @@ class LockTest {
     @Test fun lockIsOffByDefault() {
         runBlocking { repo.disable() }
         ActivityScenario.launch(MainActivity::class.java).use {
-            rule.onNodeWithText("نمونه طراحی").assertIsDisplayed()
+            rule.waitUntil(5_000) { rule.onAllNodesWithText("نمونه طراحی").fetchSemanticsNodes().isNotEmpty() }
             rule.onNodeWithText("سرجمع قفل است").assertDoesNotExist()
         }
     }
@@ -34,7 +35,8 @@ class LockTest {
     @Test fun enabledLockNeedsTheRightPin() {
         runBlocking { repo.enable("2468", biometric = false) }
         ActivityScenario.launch(MainActivity::class.java).use {
-            rule.onNodeWithText("سرجمع قفل است").assertIsDisplayed()
+            rule.waitUntil(5_000) { rule.onAllNodesWithText("سرجمع قفل است").fetchSemanticsNodes().isNotEmpty() }
+            rule.onNodeWithText("نمونه طراحی").assertDoesNotExist()
             rule.onNodeWithTag("lock_pin").performTextInput("1111")
             rule.onNodeWithText("باز کن").performClick()
             rule.onNodeWithText("رمز درست نیست").assertIsDisplayed()
@@ -47,6 +49,7 @@ class LockTest {
     @Test fun turningOnFromSettingsAsksForPinTwice() {
         runBlocking { repo.disable() }
         ActivityScenario.launch(MainActivity::class.java).use {
+            rule.waitUntil(5_000) { rule.onAllNodesWithText("تنظیمات").fetchSemanticsNodes().isNotEmpty() }
             rule.onNodeWithText("تنظیمات").performClick()
             rule.onNodeWithTag("lock_switch").performClick()
             rule.onNodeWithTag("new_pin").performTextInput("1357")

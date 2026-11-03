@@ -80,6 +80,11 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
+        // Decide synchronously from the last known settings so content never shows before the lock;
+        // then refresh from storage (first start, or settings changed).
+        currentConfig.value?.let { cached ->
+            if (LockPolicy.shouldLock(cached, backgroundedAt, SystemClock.elapsedRealtime())) locked.value = true
+        }
         lifecycleScope.launch {
             val config = lockRepository.current()
             currentConfig.value = config

@@ -13,13 +13,29 @@ android {
         applicationId = "ir.sarejam.app" // never change
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (System.getenv("SAREJAM_VERSION_CODE") ?: "1").toInt()
+        versionName = System.getenv("SAREJAM_VERSION_NAME") ?: "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // Release signing comes only from GitHub Secrets (CI) or a local keystore.properties that is
+    // never committed. Without them a release build is signed with the debug key, which is only
+    // good for testing on the emulator — the tag workflow refuses to publish such a build.
+    val keystoreFile = System.getenv("SAREJAM_KEYSTORE_FILE")
+    signingConfigs {
+        if (keystoreFile != null) {
+            create("release") {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("SAREJAM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("SAREJAM_KEY_ALIAS")
+                keyPassword = System.getenv("SAREJAM_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -61,6 +77,5 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.compose.ui.test.manifest)
 }
