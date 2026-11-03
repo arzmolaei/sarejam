@@ -1,0 +1,13 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+# signing keys and secrets never go into the repo
+*.jks
+*.keystore
+keystore.properties
+# real (non-anonymised) SMS samples stay off the repo
+samples-private/
+node_modules/
