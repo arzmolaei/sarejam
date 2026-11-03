@@ -1,0 +1,12 @@
+name: probe
+on: { push: { branches: [ "claude/**" ], paths: [ ".github/workflows/probe.yml" ] } }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for a in com/android/tools/build/gradle androidx/compose/compose-bom androidx/room/room-runtime androidx/activity/activity-compose androidx/core/core-ktx androidx/core/core-splashscreen androidx/biometric/biometric androidx/datastore/datastore-preferences androidx/lifecycle/lifecycle-runtime-compose androidx/hilt/hilt-navigation-compose androidx/sqlite/sqlite-ktx androidx/test/ext/junit androidx/compose/ui/ui-test-junit4 androidx/test/runner; do
+            echo "$a: $(curl -sSL https://dl.google.com/dl/android/maven2/$a/maven-metadata.xml | grep -oE '<version>[^<]+' | sed 's/<version>//' | grep -vE 'alpha|beta|rc|dev' | tail -3 | tr '\n' ' ')"; done
+          for a in com/google/dagger/hilt-android net/zetetic/sqlcipher-android com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin org/jetbrains/kotlin/kotlin-gradle-plugin; do
+            echo "$a: $(curl -sSL https://repo1.maven.org/maven2/$a/maven-metadata.xml | grep -oE '<version>[^<]+' | sed 's/<version>//' | grep -vE 'alpha|beta|RC|Beta|dev' | tail -3 | tr '\n' ' ')"; done
+          ls $ANDROID_HOME/platforms $ANDROID_HOME/build-tools; java -version 2>&1 | head -1
