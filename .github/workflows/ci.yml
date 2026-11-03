@@ -1,6 +1,7 @@
 name: CI
 on:
   push:
+    branches-ignore: [ "release-staging/**", "ci-screenshots" ]
   pull_request:
 
 permissions:
