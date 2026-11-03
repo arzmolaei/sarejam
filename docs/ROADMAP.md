@@ -11,7 +11,7 @@
   تمام شد: صفحه نمونه همه اجزا را در هر سه حالت درست نشان می‌دهد.
 - [x] **0.4 آیکون اپ** — adaptive icon از `brand/sarejam-icon.svg` + themed icon تک‌رنگ + splash.
   تمام شد: آیکون روی صفحه اصلی شبیه‌ساز درست است، با و بدون «آیکون‌های رنگی».
-- [ ] **0.5 دیتابیس رمزدار** — `core:database` با Room + SQLCipher، کلید در Keystore، جدول‌های Account، Transaction، Category، RawMessage؛ تست Migration آماده.
+- [x] **0.5 دیتابیس رمزدار** — `core:database` با Room + SQLCipher، کلید در Keystore، جدول‌های Account، Transaction، Category، RawMessage؛ تست Migration آماده.
   تمام شد: تست‌ها سبز؛ فایل دیتابیس بدون کلید باز نمی‌شود.
 - [ ] **0.6 قفل اختیاری** — Biometric یا رمز، پیش‌فرض خاموش.
 - [ ] **0.7 خط ساخت** — GitHub Actions: build + test روی هر push؛ APK امضاشده روی هر tag `v*` در Releases.
