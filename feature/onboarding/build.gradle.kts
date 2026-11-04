@@ -7,8 +7,7 @@ android { namespace = "ir.sarejam.feature.onboarding" }
 
 dependencies {
     implementation(project(":core:ui"))
-    implementation(project(":core:database"))
-    implementation(project(":engine:insight"))
-    implementation(platform(libs.compose.bom))
-    implementation(libs.compose.material3)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.activity.compose)
+    testImplementation(libs.junit)
 }

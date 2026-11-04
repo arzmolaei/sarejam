@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onb_welcome_title">سرجمع</string>
+    <string name="onb_welcome_body">پیامک‌های بانک را خودم می‌خوانم و می‌گویم پولت کجا رفت. فقط وقتی لازم باشد سؤال می‌پرسم.</string>
+    <string name="onb_start">شروع</string>
+    <string name="onb_privacy_title">داده‌هایت فقط روی همین گوشی است</string>
+    <string name="onb_privacy_body">بدون سرور، بدون حساب کاربری، بدون تبلیغ. هیچ داده‌ای بدون انتخاب صریح تو از گوشی خارج نمی‌شود. همه‌چیز رمزنگاری‌شده ذخیره می‌شود.</string>
+    <string name="onb_privacy_points">• پیامک‌های شخصی نه خوانده و نه ذخیره می‌شوند.\n• متن پیامک رمز یک‌بارمصرف هرگز ذخیره نمی‌شود.\n• فقط اجازه خواندن پیامک لازم است؛ نه ارسال پیامک، نه مخاطبین.</string>
+    <string name="onb_next">ادامه</string>
+    <string name="onb_sms_title">اجازه خواندن پیامک</string>
+    <string name="onb_sms_body">برای ثبت خودکار خرج‌ها، سرجمع باید پیامک‌های بانک را بخواند. این تنها اجازه‌ای است که الان لازم است.</string>
+    <string name="onb_sms_allow">اجازه می‌دهم</string>
+    <string name="onb_later">بعداً</string>
+    <string name="onb_restricted_title">اندروید این اجازه را قفل کرده</string>
+    <string name="onb_restricted_steps">چون سرجمع از فروشگاه نصب نشده، اندروید اول باید اجازه را باز کند:\n۱. دکمه «باز کردن اطلاعات برنامه» را بزن.\n۲. بالای صفحه روی سه‌نقطه ⋮ بزن.\n۳. «اجازه دادن به تنظیمات محدودشده» را بزن و تأیید کن.\n۴. برگرد و دوباره «اجازه می‌دهم» را بزن.</string>
+    <string name="onb_open_app_info">باز کردن اطلاعات برنامه</string>
+    <string name="onb_done_title">آماده است</string>
+    <string name="onb_done_granted">از این به بعد هر پیامک بانکی خودکار ثبت می‌شود.</string>
+    <string name="onb_done_denied">بدون اجازه پیامک، سرجمع با ثبت دستی کار می‌کند. هر وقت خواستی از تنظیمات اجازه را بده.</string>
+    <string name="onb_enter">ورود به سرجمع</string>
+</resources>

@@ -27,6 +27,8 @@ import ir.sarejam.core.ui.Accent
 import ir.sarejam.core.ui.DesignShowcase
 import ir.sarejam.core.ui.SarejamTheme
 import ir.sarejam.core.ui.ThemeMode
+import ir.sarejam.feature.onboarding.OnboardingScreen
+import ir.sarejam.feature.onboarding.OnboardingStore
 import ir.sarejam.feature.settings.LockPolicy
 import ir.sarejam.feature.settings.LockRepository
 import ir.sarejam.feature.settings.LockScreen
@@ -36,6 +38,8 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
     private val lockRepository by lazy { LockRepository(this) }
+    private val onboardingStore by lazy { OnboardingStore(this) }
+    private val onboardingDone = mutableStateOf<Boolean?>(null)
     private val locked = mutableStateOf(false)
     private val lockChecked = mutableStateOf(false)
     private var backgroundedAt: Long? = null
@@ -44,7 +48,8 @@ class MainActivity : FragmentActivity() {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         // Keep the splash until we know whether to show the lock, so app content never flashes.
-        splash.setKeepOnScreenCondition { !lockChecked.value }
+        splash.setKeepOnScreenCondition { !lockChecked.value || onboardingDone.value == null }
+        lifecycleScope.launch { onboardingDone.value = onboardingStore.done() }
         enableEdgeToEdge()
         val startMode = intent.getStringExtra(EXTRA_MODE)
             ?.let { name -> ThemeMode.entries.firstOrNull { it.name.equals(name, ignoreCase = true) } }
@@ -54,7 +59,11 @@ class MainActivity : FragmentActivity() {
             var accent by rememberSaveable { mutableStateOf(Accent.Turquoise) }
             var tab by rememberSaveable { mutableStateOf(0) }
             SarejamTheme(mode = mode, accent = accent) {
-                if (locked.value) {
+                if (onboardingDone.value == false) {
+                    OnboardingScreen(onFinished = { _ ->
+                        lifecycleScope.launch { onboardingStore.markDone(); onboardingDone.value = true }
+                    })
+                } else if (locked.value) {
                     val config = currentConfig.value
                     if (config != null) LockScreen(config, this, SystemClock::elapsedRealtime) { locked.value = false }
                 } else {

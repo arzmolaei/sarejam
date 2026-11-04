@@ -22,6 +22,8 @@ class LockTest {
     @get:Rule val rule = createEmptyComposeRule()
     private val repo = LockRepository(ApplicationProvider.getApplicationContext())
 
+    @org.junit.Before fun skipOnboarding() = runBlocking { ir.sarejam.feature.onboarding.OnboardingStore(ApplicationProvider.getApplicationContext()).markDone() }
+
     @After fun cleanUp() = runBlocking { repo.disable() }
 
     @Test fun lockIsOffByDefault() {
