@@ -14,7 +14,7 @@ android {
 room { schemaDirectory("$projectDir/schemas") }
 
 dependencies {
-    implementation(project(":core:model"))
+    api(project(":core:model"))
     api(libs.room.runtime)
     api(libs.room.ktx)
     ksp(libs.room.compiler)

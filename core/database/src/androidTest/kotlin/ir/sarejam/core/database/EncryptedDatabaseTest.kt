@@ -35,12 +35,12 @@ class EncryptedDatabaseTest {
         val db = DatabaseFactory.open(context, key, name)
         val now = 1_700_000_000_000
         val account = db.accounts().insert(
-            AccountEntity(kind = "BANK", bank = "TEST", name = "حساب آزمایشی", last4 = "0000", lastBalance = 5_000_000, createdAt = now, updatedAt = now),
+            AccountEntity(kind = ir.sarejam.core.model.AccountKind.BANK, bank = "TEST", name = "حساب آزمایشی", last4 = "0000", lastBalance = 5_000_000, createdAt = now, updatedAt = now),
         )
         db.transactions().insert(
             TransactionEntity(
-                accountId = account, amount = 1_250_000, direction = "OUT", occurredAt = now, balanceAfter = 3_750_000,
-                kind = "EXPENSE", categoryId = null, counterparty = null, note = null, createdAt = now, updatedAt = now,
+                accountId = account, amount = 1_250_000, direction = ir.sarejam.core.model.MoneyDirection.OUT, occurredAt = now, balanceAfter = 3_750_000,
+                kind = ir.sarejam.core.model.TransactionKind.EXPENSE, categoryId = null, counterparty = null, note = null, createdAt = now, updatedAt = now,
             ),
         )
         db.close()

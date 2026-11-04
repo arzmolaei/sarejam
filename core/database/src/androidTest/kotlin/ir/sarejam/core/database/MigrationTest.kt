@@ -35,6 +35,13 @@ class MigrationTest {
         db.query("SELECT amount FROM `transaction` WHERE id = 1").use { c ->
             check(c.moveToFirst() && c.getLong(0) == 50L) { "transaction lost during migration" }
         }
+        // 1 → 2: old rows get safe defaults for the new columns.
+        db.query("SELECT status, decision, userEditedFields, confidence FROM `transaction` WHERE id = 1").use { c ->
+            check(c.moveToFirst()) { "row missing after 1→2" }
+            check(c.getString(0) == "CONFIRMED" && c.getString(1) == "CERTAIN" && c.getString(2) == "" && c.getInt(3) == 100) {
+                "unexpected defaults: ${c.getString(0)} ${c.getString(1)} '${c.getString(2)}' ${c.getInt(3)}"
+            }
+        }
         db.close()
     }
 }
