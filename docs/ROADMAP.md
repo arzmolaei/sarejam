@@ -21,7 +21,7 @@
 
 نسخه ۱ **فقط مالی** است؛ هیچ کار بخش کاری/شخصی پیش از `v1.0.0` ساخته نمی‌شود.
 
-- [ ] **1.0 مدل داده کامل مالی** — Source، انواع تراکنش (`EXPENSE…FAILED`)، `userEditedFields`، `parserVersion`، `subscriptionId`، سه وضعیت قطعی/پیشنهاد/نامشخص.
+- [x] **1.0 مدل داده کامل مالی** — Source، انواع تراکنش (`EXPENSE…FAILED`)، `userEditedFields`، `parserVersion`، `subscriptionId`، سه وضعیت قطعی/پیشنهاد/نامشخص.
   تمام شد: تست نشان دهد تجزیه دوباره فیلد دستی‌شده را عوض نمی‌کند و `TRANSFER`/`ADJUSTMENT` در گزارش خرج نمی‌آیند.
 - [ ] **1.1 شروع کار** — طبق `docs/PRODUCT.md`: فقط اجازه پیامک، راهنمای هر محیط نصب (جدول `docs/ARCHITECTURE.md`)؛ نوتیفیکیشن بعداً.
 - [ ] **1.2 گرفتن پیامک زنده** — `SmsReceiver` → parser → ذخیره؛ رعایت قانون‌های Otp و NotBank.
