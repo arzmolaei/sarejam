@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":engine:parser"))
     implementation(project(":engine:insight"))
     implementation(project(":core:database"))
+    api(libs.androidx.work.runtime)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 

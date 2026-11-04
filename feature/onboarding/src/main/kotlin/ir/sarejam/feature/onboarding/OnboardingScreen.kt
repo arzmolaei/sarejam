@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,8 +48,15 @@ private fun installer(context: Context): String? = runCatching {
 }.getOrNull()
 
 /** docs/PRODUCT.md «شروع کار»: welcome → privacy → only the SMS permission → ready. */
+/** Progress of the 6-month inbox import (ROADMAP 1.3), fed by the app. */
+data class ImportProgress(val done: Int, val total: Int, val finished: Boolean, val transactions: Int)
+
 @Composable
-fun OnboardingScreen(onFinished: (smsGranted: Boolean) -> Unit) {
+fun OnboardingScreen(
+    importProgress: ImportProgress? = null,
+    onSmsGranted: () -> Unit = {},
+    onFinished: (smsGranted: Boolean) -> Unit,
+) {
     val context = LocalContext.current
     var step by rememberSaveable { mutableStateOf(Step.WELCOME) }
     val initialGuide = InstallEnvironment.smsGuide(Build.VERSION.SDK_INT, InstallEnvironment.source(installer(context)))
@@ -57,7 +65,7 @@ fun OnboardingScreen(onFinished: (smsGranted: Boolean) -> Unit) {
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         granted = result.values.all { it }
-        if (granted) step = Step.DONE
+        if (granted) { onSmsGranted(); step = Step.DONE }
         else {
             val activity = context as? Activity
             val canAskAgain = activity != null && ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.RECEIVE_SMS)
@@ -112,6 +120,21 @@ fun OnboardingScreen(onFinished: (smsGranted: Boolean) -> Unit) {
                 Step.DONE -> {
                     Text(stringResource(R.string.onb_done_title), style = SarejamType.screenTitle)
                     Text(stringResource(if (granted) R.string.onb_done_granted else R.string.onb_done_denied), style = SarejamType.body)
+                    if (granted && importProgress != null) {
+                        SarejamCard {
+                            if (!importProgress.finished) {
+                                Text(stringResource(R.string.onb_import_running, importProgress.done, importProgress.total), style = SarejamType.body)
+                                if (importProgress.total > 0) {
+                                    LinearProgressIndicator(
+                                        progress = { importProgress.done.toFloat() / importProgress.total },
+                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    )
+                                } else LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
+                            } else {
+                                Text(stringResource(R.string.onb_import_done, importProgress.transactions), style = SarejamType.body)
+                            }
+                        }
+                    }
                     Spacer(Modifier.weight(1f))
                     Button({ onFinished(granted) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.onb_enter)) }
                 }

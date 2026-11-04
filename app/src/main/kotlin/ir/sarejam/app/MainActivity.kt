@@ -27,7 +27,11 @@ import ir.sarejam.core.ui.Accent
 import ir.sarejam.core.ui.DesignShowcase
 import ir.sarejam.core.ui.SarejamTheme
 import ir.sarejam.core.ui.ThemeMode
+import androidx.compose.runtime.collectAsState
+import ir.sarejam.capture.InboxScanWorker
+import ir.sarejam.feature.onboarding.ImportProgress
 import ir.sarejam.feature.onboarding.OnboardingScreen
+import ir.sarejam.feature.onboarding.hasSmsPermission
 import ir.sarejam.feature.onboarding.OnboardingStore
 import ir.sarejam.feature.settings.LockPolicy
 import ir.sarejam.feature.settings.LockRepository
@@ -49,7 +53,11 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         // Keep the splash until we know whether to show the lock, so app content never flashes.
         splash.setKeepOnScreenCondition { !lockChecked.value || onboardingDone.value == null }
-        lifecycleScope.launch { onboardingDone.value = onboardingStore.done() }
+        lifecycleScope.launch {
+            val done = onboardingStore.done()
+            onboardingDone.value = done
+            if (done && hasSmsPermission(this@MainActivity)) InboxScanWorker.enqueue(this@MainActivity)
+        }
         enableEdgeToEdge()
         val startMode = intent.getStringExtra(EXTRA_MODE)
             ?.let { name -> ThemeMode.entries.firstOrNull { it.name.equals(name, ignoreCase = true) } }
@@ -60,7 +68,19 @@ class MainActivity : FragmentActivity() {
             var tab by rememberSaveable { mutableStateOf(0) }
             SarejamTheme(mode = mode, accent = accent) {
                 if (onboardingDone.value == false) {
-                    OnboardingScreen(onFinished = { _ ->
+                    val infos by androidx.work.WorkManager.getInstance(this@MainActivity)
+                        .getWorkInfosForUniqueWorkFlow(InboxScanWorker.UNIQUE).collectAsState(initial = emptyList())
+                    val info = infos.firstOrNull()
+                    val progress = info?.let { i ->
+                        val data = if (i.state.isFinished) i.outputData else i.progress
+                        ImportProgress(
+                            done = data.getInt(InboxScanWorker.KEY_DONE, 0),
+                            total = data.getInt(InboxScanWorker.KEY_TOTAL, 0),
+                            finished = i.state.isFinished,
+                            transactions = data.getInt(InboxScanWorker.KEY_TRANSACTIONS, 0),
+                        )
+                    }
+                    OnboardingScreen(importProgress = progress, onSmsGranted = { InboxScanWorker.enqueue(this@MainActivity) }, onFinished = { _ ->
                         lifecycleScope.launch { onboardingStore.markDone(); onboardingDone.value = true }
                     })
                 } else if (locked.value) {
@@ -89,6 +109,8 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
+        // Catch messages missed while the app was closed (docs/ARCHITECTURE.md «باتری»); only new ones are read.
+        if (onboardingDone.value == true && hasSmsPermission(this)) InboxScanWorker.enqueue(this)
         // Decide synchronously from the last known settings so content never shows before the lock;
         // then refresh from storage (first start, or settings changed).
         currentConfig.value?.let { cached ->
