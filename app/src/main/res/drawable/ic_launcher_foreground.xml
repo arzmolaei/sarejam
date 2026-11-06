@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Geometry and safe-area transforms from brand/app-icon/adaptive-foreground.svg. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group android:pivotX="256" android:pivotY="256" android:scaleX="0.62" android:scaleY="0.62">
+        <group android:translateX="22" android:translateY="4">
+            <path android:fillColor="#FFFFFF" android:pathData="M356,196A22,22 0,0 1,378 218V300A22,22 0,0 1,356 322A22,22 0,0 1,334 300V218A22,22 0,0 1,356 196Z" />
+            <path android:fillColor="#FFFFFF" android:pathData="M290,160A22,22 0,0 1,312 182V300A22,22 0,0 1,290 322A22,22 0,0 1,268 300V182A22,22 0,0 1,290 160Z" />
+            <path android:fillColor="#FFFFFF" android:pathData="M224,124A22,22 0,0 1,246 146V300A22,22 0,0 1,224 322A22,22 0,0 1,202 300V146A22,22 0,0 1,224 124Z" />
+            <path
+                android:fillColor="@android:color/transparent"
+                android:pathData="M356,300H224C224,404 82,404 82,300"
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="44"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round" />
+            <path android:fillColor="#F4B740" android:pathData="M52,212A30,30 0,1 0,112 212A30,30 0,1 0,52 212Z" />
+        </group>
+    </group>
+</vector>

@@ -5,4 +5,9 @@
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowBackground">#F6F8F7</item>
     </style>
+    <style name="Theme.Sarejam.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Sarejam</item>
+    </style>
 </resources>

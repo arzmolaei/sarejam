@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.activity.compose)
+    implementation(libs.core.splashscreen)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 }

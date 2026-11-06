@@ -5,6 +5,7 @@ ksp = "2.3.13"
 hilt = "2.60.1"
 compose-bom = "2026.09.00"
 activity = "1.13.0"
+core-splashscreen = "1.2.0"
 junit = "5.14.1"
 
 [libraries]
@@ -13,6 +14,7 @@ compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "core-splashscreen" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
