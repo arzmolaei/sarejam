@@ -1,13 +1,22 @@
+# Build outputs and local tools
 .gradle/
-build/
+.kotlin/
+**/build/
 local.properties
-*.iml
 .idea/
-.DS_Store
-# signing keys and secrets never go into the repo
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+# Never commit signing material
 *.jks
 *.keystore
 keystore.properties
-# real (non-anonymised) SMS samples stay off the repo
-samples-private/
+.superpowers/
+.DS_Store
 node_modules/
+# Real (non-anonymised) SMS samples stay off the public repo
+samples-private/
+
+# Scratch files used by maintenance tools
+/work/
